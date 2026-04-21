@@ -63,6 +63,27 @@
         "b_parent": null
     },
     {
+        "b_module": "dns_scanner",
+        "b_class": "DNSScanner",
+        "b_port": 53,
+        "b_status": "dns_scan",
+        "b_parent": null
+    },
+    {
+        "b_module": "snmp_scanner",
+        "b_class": "SNMPScanner",
+        "b_port": 161,
+        "b_status": "snmp_scan",
+        "b_parent": null
+    },
+    {
+        "b_module": "upnp_scanner",
+        "b_class": "UPnPScanner",
+        "b_port": null,
+        "b_status": "upnp_scan",
+        "b_parent": null
+    },
+    {
         "b_module": "rdp_connector",
         "b_class": "RDPBruteforce",
         "b_port": 3389,
