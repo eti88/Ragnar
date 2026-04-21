@@ -480,6 +480,14 @@ const configMetadata = {
     openai_api_token: {
         label: "OpenAI API Token",
         description: "Your OpenAI API key for AI-powered features. Keep this confidential."
+    },
+    ai_base_url: {
+        label: "Custom API Base URL",
+        description: "Optional OpenAI-compatible endpoint URL (e.g. Ollama, LocalAI, LiteLLM, Azure OpenAI). Leave empty for the official OpenAI API."
+    },
+    ai_model: {
+        label: "AI Model",
+        description: "Model identifier sent to the configured endpoint (e.g. gpt-4o-mini, llama3.1, mistral-large)."
     }
 };
 
@@ -499,6 +507,7 @@ function epdTypeToSizeKey(epd_type) {
     if (epd_type.startsWith('epd3in7')) return '3in7';
     if (epd_type.startsWith('epd4in26')) return '4in26';
     if (epd_type === 'gc9a01') return '1in28_tft';
+    if (epd_type === 'st7789p3') return '1in69_tft';
     if (epd_type === 'ssd1306') return '0in96_oled';
     if (epd_type === 'lcd1602') return 'lcd1602';
     return epd_type; // fallback: return as-is
@@ -513,6 +522,7 @@ const displaySelectOptions = {
         { value: '3in7', label: '3.7" e-Paper (280x480)' },
         { value: '4in26', label: '4.26" e-Paper (800x480)' },
         { value: '1in28_tft', label: '1.28" GC9A01 Round TFT (240x240)' },
+        { value: '1in69_tft', label: '1.69" ST7789P3 TFT (240x280) — PiSugar WHISPLAY' },
         { value: '0in96_oled', label: '0.96" SSD1306 OLED (128x64)' },
         { value: 'lcd1602', label: '16×2 LCD1602 Character LCD (I2C)' },
         { value: 'max7219_8panel', label: 'MAX7219 8-panel LED Matrix (64×8)' },
@@ -10255,15 +10265,17 @@ function displayConfigForm(config) {
         const isMax7219 = val === 'max7219_8panel' || val === 'max7219_4panel';
         const isSsd1306 = val === '0in96_oled';
         const isGc9a01 = val === '1in28_tft';
+        const isSt7789p3 = val === '1in69_tft';
         const isLcd1602 = val === 'lcd1602';
-        const isEpaper = !isMax7219 && !isSsd1306 && !isGc9a01 && !isLcd1602;
+        const isTft = isGc9a01 || isSt7789p3;
+        const isEpaper = !isMax7219 && !isSsd1306 && !isTft && !isLcd1602;
         if (colorRow) colorRow.style.display = isGc9a01 ? '' : 'none';
         if (addrRow) addrRow.style.display = isSsd1306 ? '' : 'none';
         if (lcdAddrRow) lcdAddrRow.style.display = isLcd1602 ? '' : 'none';
         if (max7219SpiPortRow) max7219SpiPortRow.style.display = isMax7219 ? '' : 'none';
         if (max7219SpiDevRow) max7219SpiDevRow.style.display = isMax7219 ? '' : 'none';
         if (max7219BlockRow) max7219BlockRow.style.display = isMax7219 ? '' : 'none';
-        if (brightnessRow) brightnessRow.style.display = (isMax7219 || isSsd1306 || isGc9a01) ? '' : 'none';
+        if (brightnessRow) brightnessRow.style.display = (isMax7219 || isSsd1306 || isTft) ? '' : 'none';
         if (spiClockRow) spiClockRow.style.display = isEpaper ? '' : 'none';
     }
     if (epdSelect) {
@@ -10382,7 +10394,17 @@ async function loadAIConfiguration(config) {
             : false;
         aiEnabledCheckbox.checked = aiEnabled;
     }
-    
+
+    // Sync custom base URL and model inputs from config
+    const baseUrlInput = document.getElementById('ai-base-url');
+    if (baseUrlInput) {
+        baseUrlInput.value = (config && config.ai_base_url) ? config.ai_base_url : '';
+    }
+    const modelInput = document.getElementById('ai-model');
+    if (modelInput) {
+        modelInput.value = (config && config.ai_model) ? config.ai_model : '';
+    }
+
     // Fetch token status from environment variable
     try {
         const tokenStatus = await fetchAPI('/api/ai/token');
@@ -10399,6 +10421,62 @@ async function loadAIConfiguration(config) {
         }
     } catch (error) {
         console.error('Failed to fetch AI token status:', error);
+    }
+}
+
+function showAIConfigStatus(message, tone) {
+    const statusDiv = document.getElementById('ai-config-status');
+    const statusMessage = document.getElementById('ai-config-status-message');
+    if (!statusDiv || !statusMessage) return;
+    const palette = {
+        green: 'bg-green-900/30 border border-green-700',
+        blue: 'bg-blue-900/30 border border-blue-700',
+        yellow: 'bg-yellow-900/30 border border-yellow-700',
+        red: 'bg-red-900/30 border border-red-700'
+    };
+    statusDiv.className = `p-3 rounded-lg text-sm ${palette[tone] || palette.blue}`;
+    statusMessage.textContent = message;
+    statusDiv.classList.remove('hidden');
+    setTimeout(() => statusDiv.classList.add('hidden'), 5000);
+}
+
+async function saveAIBaseUrl() {
+    const input = document.getElementById('ai-base-url');
+    if (!input) return;
+    const baseUrl = input.value.trim();
+    try {
+        const result = await postAPI('/api/config', { ai_base_url: baseUrl });
+        if (result && result.ai_reload_success === false) {
+            throw new Error(result.ai_reload_error || 'AI engine failed to reload with the new endpoint.');
+        }
+        showAIConfigStatus(baseUrl
+            ? `✓ Custom API base URL saved: ${baseUrl}`
+            : '✓ Cleared custom base URL. Using default OpenAI endpoint.', 'green');
+        addConsoleMessage('AI base URL updated', 'success');
+    } catch (error) {
+        console.error('Failed to save AI base URL:', error);
+        showAIConfigStatus(`✗ Failed to save base URL: ${error.message || 'unknown error'}`, 'red');
+    }
+}
+
+async function saveAIModel() {
+    const input = document.getElementById('ai-model');
+    if (!input) return;
+    const model = input.value.trim();
+    if (!model) {
+        showAIConfigStatus('⚠ Please enter a model identifier.', 'yellow');
+        return;
+    }
+    try {
+        const result = await postAPI('/api/config', { ai_model: model });
+        if (result && result.ai_reload_success === false) {
+            throw new Error(result.ai_reload_error || 'AI engine failed to reload with the new model.');
+        }
+        showAIConfigStatus(`✓ AI model saved: ${model}`, 'green');
+        addConsoleMessage('AI model updated', 'success');
+    } catch (error) {
+        console.error('Failed to save AI model:', error);
+        showAIConfigStatus(`✗ Failed to save model: ${error.message || 'unknown error'}`, 'red');
     }
 }
 

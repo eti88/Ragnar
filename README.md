@@ -1,7 +1,7 @@
 ## <img width="70" height="150" alt="image" src="https://github.com/user-attachments/assets/463d32c7-f6ca-447c-b62b-f18f2429b2b2" /> Ragnar
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/J3J2EARPK)
-![GitHub stars](https://img.shields.io/github/stars/PierreGode/Ragnar)
+![GitHub stars](https://img.shields.io/github/stars/eti88/Ragnar)
 ![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=fff)
 ![Status](https://img.shields.io/badge/Status-Development-blue.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -23,7 +23,7 @@ Ragnar is a fork of the awesome [Bjorn](https://github.com/infinition/Bjorn) pro
 ## Quick Install
 
 ```bash
-wget https://raw.githubusercontent.com/PierreGode/Ragnar/main/install_ragnar.sh
+wget https://raw.githubusercontent.com/eti88/Ragnar/main/install_ragnar.sh
 sudo chmod +x install_ragnar.sh && sudo ./install_ragnar.sh
 # On Raspberry Pi: choose between e-Paper HAT, server/headless, or Pineapple Pager deployment.
 # On other hardware: choose between server install or Pineapple Pager deployment.
@@ -264,8 +264,8 @@ See [Contributing Docs](docs/CONTRIBUTING.md) and [Code of Conduct](docs/CODE_OF
 
 ## 📫 Contact
 
-- **Report Issues**: Via [GitHub Issues](https://github.com/PierreGode/Ragnar/issues)
-- **Author**: PierreGode — [PierreGode/Ragnar](https://github.com/PierreGode/Ragnar)
+- **Report Issues**: Via [GitHub Issues](https://github.com/eti88/Ragnar/issues)
+- **Author**: PierreGode — [eti88/Ragnar](https://github.com/eti88/Ragnar)
 
 ---
 

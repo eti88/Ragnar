@@ -105,7 +105,7 @@ Hardware Requirements Check:
 
 ### Fresh Installation (8GB+ System)
 ```bash
-wget https://raw.githubusercontent.com/PierreGode/Ragnar/main/install_ragnar.sh
+wget https://raw.githubusercontent.com/eti88/Ragnar/main/install_ragnar.sh
 sudo chmod +x install_ragnar.sh && sudo ./install_ragnar.sh
 # Advanced tools automatically installed on capable hardware
 # No user interaction required
@@ -210,8 +210,8 @@ We welcome contributions! Areas of interest:
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/PierreGode/Ragnar/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/PierreGode/Ragnar/discussions)
+- **Issues**: [GitHub Issues](https://github.com/eti88/Ragnar/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/eti88/Ragnar/discussions)
 - **Documentation**: [README.md](../README.md) | [INSTALL.md](INSTALL.md)
 
 ## 🙏 Acknowledgments

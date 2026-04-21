@@ -4117,7 +4117,7 @@
                                     <div>
                                         <label for="openai-api-token" class="block text-sm font-medium text-gray-300 mb-2">OpenAI API Token</label>
                                         <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-                                            <input type="password" id="openai-api-token" placeholder="sk-..." 
+                                            <input type="password" id="openai-api-token" placeholder="sk-..."
                                                    class="flex-1 w-full bg-slate-700 border border-slate-600 text-white py-2 px-3 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                                             <button onclick="saveAIToken()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors whitespace-nowrap w-full sm:w-auto">
                                                 Save Token
@@ -4125,6 +4125,32 @@
                                         </div>
                                         <p class="text-xs text-gray-500 mt-1">
                                             Get your API key from <a href="https://platform.openai.com/api-keys" target="_blank" class="text-purple-400 hover:text-purple-300 underline">OpenAI Platform</a>
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <label for="ai-base-url" class="block text-sm font-medium text-gray-300 mb-2">Custom API Base URL <span class="text-xs text-gray-500 font-normal">(optional)</span></label>
+                                        <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                            <input type="text" id="ai-base-url" placeholder="https://api.openai.com/v1"
+                                                   class="flex-1 w-full bg-slate-700 border border-slate-600 text-white py-2 px-3 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                            <button onclick="saveAIBaseUrl()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors whitespace-nowrap w-full sm:w-auto">
+                                                Save URL
+                                            </button>
+                                        </div>
+                                        <p class="text-xs text-gray-500 mt-1">
+                                            Point Ragnar to any OpenAI-compatible endpoint (Ollama, LocalAI, LiteLLM, Azure OpenAI, OpenRouter, …). Leave empty for the official OpenAI API.
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <label for="ai-model" class="block text-sm font-medium text-gray-300 mb-2">Model</label>
+                                        <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                            <input type="text" id="ai-model" placeholder="gpt-5-nano"
+                                                   class="flex-1 w-full bg-slate-700 border border-slate-600 text-white py-2 px-3 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                            <button onclick="saveAIModel()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors whitespace-nowrap w-full sm:w-auto">
+                                                Save Model
+                                            </button>
+                                        </div>
+                                        <p class="text-xs text-gray-500 mt-1">
+                                            Model identifier sent to the configured endpoint (e.g. <code>gpt-4o-mini</code>, <code>llama3.1</code>, <code>mistral-large</code>).
                                         </p>
                                     </div>
                                     <div id="ai-config-status" class="hidden p-3 rounded-lg text-sm">

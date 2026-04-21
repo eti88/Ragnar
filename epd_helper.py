@@ -18,6 +18,7 @@ KNOWN_EPD_TYPES = [
     "epd3in7",
     "epd4in26",
     "gc9a01",
+    "st7789p3",
     "ssd1306",
     "max7219_4panel",
     "max7219_8panel",

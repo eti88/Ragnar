@@ -82,6 +82,7 @@ SIZE_KEY_TO_DEFAULT_DRIVER = {
     "3in7":     "epd3in7",
     "4in26":    "epd4in26",
     "1in28_tft": "gc9a01",
+    "1in69_tft": "st7789p3",
     "0in96_oled": "ssd1306",
     "1602_lcd": "lcd1602",
 }
@@ -122,6 +123,8 @@ DISPLAY_PROFILES = {
     "epd4in26":    {"ref_width": DESIGN_REF_WIDTH, "ref_height": DESIGN_REF_HEIGHT, "default_flip": False},
     # GC9A01 1.28" 240x240 round colour TFT LCD
     "gc9a01":      {"ref_width": DESIGN_REF_WIDTH, "ref_height": DESIGN_REF_WIDTH, "default_flip": False},
+    # ST7789P3 1.69" 240x280 colour TFT LCD (PiSugar WHISPLAY HAT and similar)
+    "st7789p3":    {"ref_width": DESIGN_REF_WIDTH, "ref_height": DESIGN_REF_HEIGHT, "default_flip": False},
     # SSD1306 0.96" 128x64 monochrome OLED
     "ssd1306":     {"ref_width": 128, "ref_height": 64,  "default_flip": False},
     # LCD1602 16x2 character LCD (I2C via PCF8574 backpack)
@@ -661,6 +664,7 @@ class SharedData:
             "__title_ai__": "AI Integration (GPT-5 Nano)",
             "ai_enabled": False,
             "openai_api_token": "",
+            "ai_base_url": "",
             "ai_model": "gpt-5-nano",
             "ai_analysis_enabled": True,
             "ai_vulnerability_summaries": True,

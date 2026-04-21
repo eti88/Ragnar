@@ -38,6 +38,7 @@ class AIService:
         # Configuration
         self.enabled = cfg.get("ai_enabled", False)
         self.model = cfg.get("ai_model", "gpt-5.1")
+        self.base_url = (cfg.get("ai_base_url") or "").strip() or None
 
         # These must remain for backward compatibility (but not used)
         self.max_tokens = cfg.get("ai_max_tokens")
@@ -74,9 +75,13 @@ class AIService:
             return
 
         try:
-            self.client = OpenAI(api_key=self.api_token)
+            client_kwargs = {"api_key": self.api_token}
+            if self.base_url:
+                client_kwargs["base_url"] = self.base_url
+            self.client = OpenAI(**client_kwargs)
             self.initialization_error = None
-            self.logger.info(f"AI Service initialized using model: {self.model}")
+            endpoint_info = f" @ {self.base_url}" if self.base_url else ""
+            self.logger.info(f"AI Service initialized using model: {self.model}{endpoint_info}")
         except Exception as exc:
             self.client = None
             self.initialization_error = f"OpenAI client initialization failed: {exc}"
@@ -86,9 +91,12 @@ class AIService:
     def reload_token(self) -> bool:
         """Refresh the API token from disk and reinitialize the OpenAI client."""
 
-        # Keep enabled flag synced with latest config intent
+        # Keep enabled flag, base URL, and model synced with latest config intent
         if hasattr(self.shared_data, "config"):
-            self.enabled = self.shared_data.config.get("ai_enabled", self.enabled)
+            cfg = self.shared_data.config
+            self.enabled = cfg.get("ai_enabled", self.enabled)
+            self.model = cfg.get("ai_model", self.model)
+            self.base_url = (cfg.get("ai_base_url") or "").strip() or None
 
         self.api_token = self.env_manager.get_token()
         self.client = None
