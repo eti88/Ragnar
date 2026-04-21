@@ -124,7 +124,9 @@ DISPLAY_PROFILES = {
     # GC9A01 1.28" 240x240 round colour TFT LCD
     "gc9a01":      {"ref_width": DESIGN_REF_WIDTH, "ref_height": DESIGN_REF_WIDTH, "default_flip": False},
     # ST7789P3 1.69" 240x280 colour TFT LCD (PiSugar WHISPLAY HAT and similar)
-    "st7789p3":    {"ref_width": DESIGN_REF_WIDTH, "ref_height": DESIGN_REF_HEIGHT, "default_flip": False},
+    # The WHISPLAY is normally mounted 180° relative to the panel's native
+    # orientation, so default to flipped.
+    "st7789p3":    {"ref_width": DESIGN_REF_WIDTH, "ref_height": DESIGN_REF_HEIGHT, "default_flip": True},
     # SSD1306 0.96" 128x64 monochrome OLED
     "ssd1306":     {"ref_width": 128, "ref_height": 64,  "default_flip": False},
     # LCD1602 16x2 character LCD (I2C via PCF8574 backpack)

@@ -55,7 +55,7 @@ def main() -> int:
         print("wipe_epd: no EPD type configured, skipping", file=sys.stderr)
         return 0
     # Non-EPD displays are managed by display.py — no wipe needed on restart
-    _NON_EPD_TYPES = ("max7219_4panel", "max7219_8panel", "ssd1306", "gc9a01")
+    _NON_EPD_TYPES = ("max7219_4panel", "max7219_8panel", "ssd1306", "gc9a01", "st7789p3")
     if epd_type in _NON_EPD_TYPES:
         print(f"wipe_epd: {epd_type} is not an e-paper display, skipping wipe")
         return 0

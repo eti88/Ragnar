@@ -7,16 +7,20 @@
 #   width, height, init(), Clear(), getbuffer(image), display(buf),
 #   displayPartial(buf), sleep()
 #
-# Wiring (PiSugar WHISPLAY HAT default — adjust the *_PIN constants below
-# if your board uses a different pinout):
-#   VCC  → 3.3V
-#   GND  → GND
-#   DIN  → GPIO10 / MOSI  (pin 19)
-#   CLK  → GPIO11 / SCLK  (pin 23)
-#   CS   → GPIO8  / CE0   (pin 24)
-#   DC   → GPIO22         (pin 15)
-#   RST  → GPIO27         (pin 13)
-#   BL   → GPIO13         (pin 33, PWM-capable)
+# Wiring (PiSugar WHISPLAY HAT — BCM pin numbers, verified against the
+# upstream WhisPlay driver).  Adjust the *_PIN constants below only if you
+# wired a bare ST7789P3 panel on different GPIOs.
+#   VCC  → 3.3V                  (header pin 1)
+#   GND  → GND                   (header pin 6)
+#   DIN  → GPIO10 / MOSI         (header pin 19)
+#   CLK  → GPIO11 / SCLK         (header pin 23)
+#   CS   → GPIO8  / CE0          (header pin 24)
+#   RST  → GPIO4                 (header pin 7)
+#   DC   → GPIO27                (header pin 13)
+#   BL   → GPIO22  (ACTIVE LOW)  (header pin 15)
+#
+# The WHISPLAY backlight transistor is active-low: driving GPIO22 LOW turns
+# the backlight ON, HIGH turns it OFF.
 
 import logging
 import time
@@ -29,15 +33,22 @@ EPD_WIDTH  = 240
 EPD_HEIGHT = 280
 
 # The ST7789 controller has a 240x320 RAM.  For a 240x280 panel the visible
-# area is offset inside that RAM.  On the PiSugar WHISPLAY the panel is
-# top-aligned (y_offset = 20).  Flip these if the picture appears shifted.
+# area is offset inside that RAM.  With MADCTL=0x00 (portrait) the panel is
+# mapped starting at row 20 of the controller's framebuffer.
 X_OFFSET = 0
 Y_OFFSET = 20
 
-RST_PIN  = 27
-DC_PIN   = 22
+# The WHISPLAY panel has rounded corners that clip pixels near the edges.
+# SAFE_PADDING is the number of pixels of breathing room we inset from each
+# side: full-panel images are scaled down and centred so that nothing ends
+# up in the clipped region.  Raise the value if corners still cut content.
+SAFE_PADDING = 12
+
+RST_PIN  = 4
+DC_PIN   = 27
 CS_PIN   = 8
-BL_PIN   = 13
+BL_PIN   = 22
+BL_ACTIVE_LOW = True   # PiSugar WHISPLAY backlight is active-low
 
 SPI_BUS    = 0
 SPI_DEVICE = 0
@@ -85,7 +96,13 @@ class EPD:
         logger.info("ST7789P3 cleared")
 
     def getbuffer(self, image):
-        """Convert a PIL image (any mode) to a packed RGB565 byte string."""
+        """Convert a PIL image (any mode) to a packed RGB565 byte string.
+
+        Full-panel images are inset by SAFE_PADDING pixels on every side to
+        avoid losing content under the panel's rounded corners.
+        """
+        from PIL import Image as PILImage
+
         img = image.convert("RGB")
 
         if img.width != self.width or img.height != self.height:
@@ -94,6 +111,14 @@ class EPD:
                 img.width, img.height, self.width, self.height,
             )
             img = img.resize((self.width, self.height))
+
+        if SAFE_PADDING > 0:
+            safe_w = self.width  - 2 * SAFE_PADDING
+            safe_h = self.height - 2 * SAFE_PADDING
+            scaled = img.resize((safe_w, safe_h), PILImage.LANCZOS)
+            canvas = PILImage.new("RGB", (self.width, self.height), (0, 0, 0))
+            canvas.paste(scaled, (SAFE_PADDING, SAFE_PADDING))
+            img = canvas
 
         pixels = img.getdata()
         buf = bytearray(self.width * self.height * 2)
@@ -120,9 +145,23 @@ class EPD:
         """Enter sleep mode and turn off backlight."""
         self._write_cmd(0x10)   # SLPIN
         time.sleep(0.005)
-        if "bl" in self._gpio:
-            self._gpio["bl"].off()
+        self._backlight(False)
         logger.info("ST7789P3 sleeping")
+
+    # ------------------------------------------------------------------
+    # Backlight helpers (PiSugar WHISPLAY is active-low)
+    # ------------------------------------------------------------------
+
+    def _backlight(self, on: bool):
+        if "bl" not in self._gpio:
+            return
+        led = self._gpio["bl"]
+        # gpiozero.LED was instantiated with active_high=not BL_ACTIVE_LOW,
+        # so .on() always enables the backlight regardless of polarity.
+        if on:
+            led.on()
+        else:
+            led.off()
 
     # ------------------------------------------------------------------
     # Hardware helpers
@@ -142,9 +181,13 @@ class EPD:
 
             self._gpio["rst"] = gpiozero.LED(RST_PIN)
             self._gpio["dc"]  = gpiozero.LED(DC_PIN)
-            self._gpio["bl"]  = gpiozero.LED(BL_PIN)
+            # active_high=False maps .on() → output LOW, matching the
+            # active-low backlight transistor on the PiSugar WHISPLAY.
+            self._gpio["bl"]  = gpiozero.LED(
+                BL_PIN, active_high=not BL_ACTIVE_LOW, initial_value=False
+            )
 
-            self._gpio["bl"].on()
+            self._backlight(True)
         except Exception as e:
             logger.error("ST7789P3 hardware setup failed: %s", e)
             raise
@@ -188,52 +231,50 @@ class EPD:
         self._write_cmd(0x2C)   # RAMWR
 
     def _send_init_sequence(self):
-        """ST7789P3 power-on initialisation sequence (standard ST7789 command set)."""
+        """ST7789P3 power-on init sequence (matches the upstream PiSugar
+        WHISPLAY driver; values differ from a generic ST7789V panel)."""
         self._write_cmd(0x11)   # SLPOUT — exit sleep
         time.sleep(0.12)
 
-        self._write_cmd(0x36)   # MADCTL — memory access / scan direction
-        self._write_data(0x00)  # portrait, RGB order
+        self._write_cmd(0x36)   # MADCTL — portrait, RGB order
+        self._write_data(0x00)
 
-        self._write_cmd(0x3A)   # COLMOD — pixel format
-        self._write_data(0x05)  # 16-bit RGB565
+        self._write_cmd(0x3A)   # COLMOD — 16-bit RGB565
+        self._write_data(0x05)
 
-        self._write_cmd(0xB2)   # PORCTRL — porch control
+        self._write_cmd(0xB2)   # PORCTRL
         self._write_data([0x0C, 0x0C, 0x00, 0x33, 0x33])
 
-        self._write_cmd(0xB7)   # GCTRL — gate control
+        self._write_cmd(0xB7)   # GCTRL
         self._write_data(0x35)
 
         self._write_cmd(0xBB)   # VCOMS
-        self._write_data(0x19)
-
-        self._write_cmd(0xC0)   # LCMCTRL
-        self._write_data(0x2C)
+        self._write_data(0x32)
 
         self._write_cmd(0xC2)   # VDVVRHEN
         self._write_data(0x01)
 
         self._write_cmd(0xC3)   # VRHS
-        self._write_data(0x12)
+        self._write_data(0x15)
 
         self._write_cmd(0xC4)   # VDVS
         self._write_data(0x20)
 
-        self._write_cmd(0xC6)   # FRCTRL2 — 60 Hz frame rate in normal mode
+        self._write_cmd(0xC6)   # FRCTRL2 — 60 Hz frame rate
         self._write_data(0x0F)
 
         self._write_cmd(0xD0)   # PWCTRL1
         self._write_data([0xA4, 0xA1])
 
-        self._write_cmd(0xE0)   # PVGAMCTRL — positive gamma
-        self._write_data([0xD0, 0x04, 0x0D, 0x11, 0x13, 0x2B, 0x3F,
-                          0x54, 0x4C, 0x18, 0x0D, 0x0B, 0x1F, 0x23])
+        self._write_cmd(0xE0)   # PVGAMCTRL — positive gamma (WHISPLAY tuned)
+        self._write_data([0xD0, 0x08, 0x0E, 0x09, 0x09, 0x05, 0x31,
+                          0x33, 0x48, 0x17, 0x14, 0x15, 0x31, 0x34])
 
-        self._write_cmd(0xE1)   # NVGAMCTRL — negative gamma
-        self._write_data([0xD0, 0x04, 0x0C, 0x11, 0x13, 0x2C, 0x3F,
-                          0x44, 0x51, 0x2F, 0x1F, 0x1F, 0x20, 0x23])
+        self._write_cmd(0xE1)   # NVGAMCTRL — negative gamma (WHISPLAY tuned)
+        self._write_data([0xD0, 0x08, 0x0E, 0x09, 0x09, 0x15, 0x31,
+                          0x33, 0x48, 0x17, 0x14, 0x15, 0x31, 0x34])
 
-        self._write_cmd(0x21)   # INVON — display inversion required for most
-                                # ST7789 panels to show correct colours
+        self._write_cmd(0x21)   # INVON — required for correct colours on
+                                # this panel
         self._write_cmd(0x29)   # DISPON
         time.sleep(0.02)
