@@ -1,5 +1,74 @@
 // Ragnar_modern.js - Enhanced Modern JavaScript for Ragnar web interface by Pierre Gode 2025
 
+// ---------------------------------------------------------------------------
+// Scroll drift guard
+// ---------------------------------------------------------------------------
+// Periodic refreshes replace DOM subtrees (console logs, dashboard cards,
+// socket-driven tables).  When the element the browser was using as a
+// scroll-anchor is destroyed, the viewport drifts — on Ragnar that shows up
+// as the page slowly scrolling toward the bottom every few seconds.
+//
+// This guard snapshots the last scroll position that happened while the user
+// was actively interacting, and restores it whenever a DOM mutation shifts
+// the viewport outside of user interaction.
+(function installScrollDriftGuard() {
+    if (typeof window === 'undefined' || typeof MutationObserver === 'undefined') {
+        return;
+    }
+
+    let anchoredY = window.scrollY;
+    let userActiveUntil = 0;
+    const USER_GRACE_MS = 800;
+    const USER_EVENTS = [
+        'wheel', 'touchstart', 'touchmove',
+        'keydown', 'mousedown', 'pointerdown'
+    ];
+
+    USER_EVENTS.forEach(ev => {
+        window.addEventListener(ev, () => {
+            userActiveUntil = performance.now() + USER_GRACE_MS;
+        }, { passive: true, capture: true });
+    });
+
+    window.addEventListener('scroll', () => {
+        if (performance.now() < userActiveUntil) {
+            anchoredY = window.scrollY;
+        }
+    }, { passive: true });
+
+    let rafScheduled = false;
+    function checkDrift() {
+        rafScheduled = false;
+        if (performance.now() >= userActiveUntil &&
+            Math.abs(window.scrollY - anchoredY) > 2) {
+            window.scrollTo({
+                top: anchoredY,
+                left: window.scrollX,
+                behavior: 'instant'
+            });
+        }
+    }
+
+    const observer = new MutationObserver(() => {
+        if (!rafScheduled) {
+            rafScheduled = true;
+            requestAnimationFrame(checkDrift);
+        }
+    });
+
+    function start() {
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', start, { once: true });
+    } else {
+        start();
+    }
+})();
+
 let socket;
 let reconnectAttempts = 0;
 const RECONNECT_WARNING_THRESHOLD = 5;
@@ -9742,16 +9811,38 @@ function updateConsole(logs) {
     updateConsoleDisplay();
 }
 
+// Run fn while preserving the window's vertical scroll position.
+// Periodic re-renders that wipe an element's children tear down the
+// scroll-anchor the browser was tracking, which causes the viewport to
+// drift downward on every refresh.  Snapshot and restore scrollY around
+// the mutation to keep the page still.
+function preserveWindowScroll(fn) {
+    const y = window.scrollY;
+    try {
+        fn();
+    } finally {
+        if (Math.abs(window.scrollY - y) > 1) {
+            window.scrollTo({ top: y, left: window.scrollX, behavior: 'instant' });
+        }
+    }
+}
+
 function updateConsoleDisplay() {
-    const console = document.getElementById('console-output');
-    if (!console) return;
-    
-    console.innerHTML = consoleBuffer.map(entry => 
-        `<div class="${entry.colorClass}">[${entry.timestamp}] ${escapeHtml(entry.message)}</div>`
-    ).join('');
-    
-    // Auto-scroll to bottom
-    console.scrollTop = console.scrollHeight;
+    const consoleEl = document.getElementById('console-output');
+    if (!consoleEl) return;
+
+    preserveWindowScroll(() => {
+        consoleEl.replaceChildren();
+        consoleBuffer.forEach(entry => {
+            const line = document.createElement('div');
+            line.className = entry.colorClass;
+            line.textContent = `[${entry.timestamp}] ${entry.message}`;
+            consoleEl.appendChild(line);
+        });
+
+        // Auto-scroll the log container itself to its bottom
+        consoleEl.scrollTop = consoleEl.scrollHeight;
+    });
 }
 
 function clearConsole() {
