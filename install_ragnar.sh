@@ -635,7 +635,7 @@ setup_ragnar() {
         fi
         # Proceed with clone
         log "INFO" "Cloning ragnar repository"
-        git clone https://github.com/eti88/Ragnar.git
+        git clone -b custom https://github.com/eti88/Ragnar.git
         check_success "Cloned ragnar repository"
     fi
 

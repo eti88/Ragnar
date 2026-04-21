@@ -105,7 +105,7 @@ Hardware Requirements Check:
 
 ### Fresh Installation (8GB+ System)
 ```bash
-wget https://raw.githubusercontent.com/eti88/Ragnar/main/install_ragnar.sh
+wget https://raw.githubusercontent.com/eti88/Ragnar/custom/install_ragnar.sh
 sudo chmod +x install_ragnar.sh && sudo ./install_ragnar.sh
 # Advanced tools automatically installed on capable hardware
 # No user interaction required

@@ -23,7 +23,7 @@ Ragnar is a fork of the awesome [Bjorn](https://github.com/infinition/Bjorn) pro
 ## Quick Install
 
 ```bash
-wget https://raw.githubusercontent.com/eti88/Ragnar/main/install_ragnar.sh
+wget https://raw.githubusercontent.com/eti88/Ragnar/custom/install_ragnar.sh
 sudo chmod +x install_ragnar.sh && sudo ./install_ragnar.sh
 # On Raspberry Pi: choose between e-Paper HAT, server/headless, or Pineapple Pager deployment.
 # On other hardware: choose between server install or Pineapple Pager deployment.

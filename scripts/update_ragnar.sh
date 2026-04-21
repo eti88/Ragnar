@@ -64,7 +64,7 @@ echo -e "${BLUE}Step 3: Fetching latest updates...${NC}"
 git fetch origin
 
 echo -e "${BLUE}Step 4: Updating to latest version...${NC}"
-if git pull origin main; then
+if git pull origin custom; then
     echo -e "${GREEN}Update completed successfully!${NC}"
 else
     echo -e "${RED}Update failed. Attempting to restore backup...${NC}"
