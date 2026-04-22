@@ -84,6 +84,13 @@
         "b_parent": null
     },
     {
+        "b_module": "web_scanner",
+        "b_class": "WebScanner",
+        "b_port": null,
+        "b_status": "web_scan",
+        "b_parent": null
+    },
+    {
         "b_module": "rdp_connector",
         "b_class": "RDPBruteforce",
         "b_port": 3389,
