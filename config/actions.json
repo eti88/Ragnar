@@ -91,6 +91,20 @@
         "b_parent": null
     },
     {
+        "b_module": "smb_cred_stealer",
+        "b_class": "SMBCredStealer",
+        "b_port": 445,
+        "b_status": "smb_cred_stealer",
+        "b_parent": null
+    },
+    {
+        "b_module": "vpn_portal_detector",
+        "b_class": "VPNPortalDetector",
+        "b_port": null,
+        "b_status": "vpn_portal_scan",
+        "b_parent": null
+    },
+    {
         "b_module": "rdp_connector",
         "b_class": "RDPBruteforce",
         "b_port": 3389,
